@@ -1,16 +1,32 @@
 "use client"
 
-import { useState } from "react";
+import { ChangeEvent, FormEvent, useState } from "react";
+import { collection, addDoc } from "firebase/firestore"; 
+import { db } from "./firebase";
 
 export default function Home() {
 
   const [items, setItems] = useState([
-    { name: "Coffee", price: 12 },
-    { name: "Bread", price: 15 },
-    { name: "Banana", price: 29 },
+    { name: "Coffee", price: "12" },
+    { name: "Bread", price: "15" },
+    { name: "Banana", price: "29" },
   ])
 
+  const [newItem, setNewItem] = useState({ name: '', price: '' })
+
   const [total, setTotal] = useState(0)
+
+  const addItem = async (e: FormEvent)=> {
+    e.preventDefault()
+    if(newItem.name !== "" && newItem.price !== '') {
+      // setItems([...items, newItem])
+      await addDoc(collection(db, "items"), {
+        name: newItem.name.trim(),
+        price: newItem.price,
+      })
+      setNewItem({name: '', price: ''})
+    }
+  }
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between sm:p-24">
@@ -22,13 +38,22 @@ export default function Home() {
               className="col-span-3 p-3 border"
               type="text"
               placeholder="Enter item"
+              value={newItem.name}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setNewItem({ ...newItem, name: e.target.value })
+              }
             />
             <input
               className="col-span-2 p-3 border mx-3"
-              type="number"
+              type="text"
               placeholder="Enter $"
+              value={newItem.price}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setNewItem({ ...newItem, price: e.target.value })
+              }
             />
             <button
+              onClick={addItem}
               type="submit"
               className="text-white bg-slate-950 hover:bg-slate-900 p-3 text-xl"
             >
@@ -51,14 +76,14 @@ export default function Home() {
               </li>
             ))}
           </ul>
-          {
-            items.length < 1 ? (''): (
-              <div className="w-full text-end text-white px-2 space-x-4" >
-                <span>Total</span>
-                <span>${total}</span>
-              </div>
-            )
-          }
+          {items.length < 1 ? (
+            ""
+          ) : (
+            <div className="w-full text-end text-white px-2 space-x-4">
+              <span>Total</span>
+              <span>${total}</span>
+            </div>
+          )}
         </div>
       </div>
     </main>
