@@ -17,21 +17,40 @@ export default function Home() {
   const [newItem, setNewItem] = useState({ name: "", price: "" });
 
   const [total, setTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(false)
 
   const addItem = async (e: FormEvent) => {
     e.preventDefault();
-    if (newItem.name !== "" && newItem.price !== "") {
-      // setItems([...items, newItem])
-      await addDoc(collection(db, "items"), {
-        name: newItem.name.trim(),
-        price: newItem.price,
-      });
-      setNewItem({ name: "", price: "" });
+    try {
+      setIsLoading(true)
+      if (newItem.name !== "" && newItem.price !== "") {
+        // setItems([...items, newItem])
+        await addDoc(collection(db, "items"), {
+          name: newItem.name.trim(),
+          price: newItem.price,
+        });
+        setNewItem({ name: "", price: "" });
+      }
+    } catch (error) {
+      setIsLoading(true)
+      console.log("Error on add item", error)
+    } finally{
+      setIsLoading(false)
     }
+    
   };
 
   const deleteItem = async (id: string) => {
-    await deleteDoc(doc(db, "items", id));
+    try {
+      setIsLoading(true)
+      await deleteDoc(doc(db, "items", id));
+    } catch (error) {
+      setIsLoading(true)
+      console.log("Error on delete item", error)
+    } finally {
+      setIsLoading(false)
+    }
+    
   };
 
   useEffect(() => {
@@ -82,9 +101,10 @@ export default function Home() {
             <button
               onClick={addItem}
               type="submit"
-              className="text-white bg-slate-950 hover:bg-slate-900 p-3 text-xl"
+              className={`text-white bg-slate-950 hover:bg-slate-900 p-3 text-xl ${isLoading && "cursor-not-allowed opacity-75"}`}
+              disabled={isLoading}
             >
-              +
+              X
             </button>
           </form>
           <ul>
@@ -100,6 +120,7 @@ export default function Home() {
                 <button
                   onClick={() => deleteItem(item.id)}
                   className="ml-8 p-4 border-l-2 border-slate-900 hover:bg-slate-900 w-16"
+                  disabled={isLoading}
                 >
                   X
                 </button>
