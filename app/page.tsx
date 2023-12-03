@@ -1,16 +1,12 @@
 "use client"
 
-import { ChangeEvent, FormEvent, useState } from "react";
-import { collection, addDoc } from "firebase/firestore"; 
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { collection, addDoc, getDocs, query, onSnapshot } from "firebase/firestore"; 
 import { db } from "./firebase";
 
 export default function Home() {
 
-  const [items, setItems] = useState([
-    { name: "Coffee", price: "12" },
-    { name: "Bread", price: "15" },
-    { name: "Banana", price: "29" },
-  ])
+  const [items, setItems] = useState<Record<string, string>[]>([])
 
   const [newItem, setNewItem] = useState({ name: '', price: '' })
 
@@ -27,6 +23,18 @@ export default function Home() {
       setNewItem({name: '', price: ''})
     }
   }
+
+
+  useEffect(()=> {
+    const itemsQuery = query(collection(db, "items"))
+    const unsubscribe = onSnapshot(itemsQuery, (querySnapShot)=> {
+      let itemArr: Record<string, string>[] = []
+      querySnapShot.forEach((doc)=> {
+        itemArr.push({...doc.data(), id: doc.id })
+      })
+      setItems(itemArr)
+    })
+  }, [])
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between sm:p-24">
