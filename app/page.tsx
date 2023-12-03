@@ -1,40 +1,59 @@
-"use client"
+"use client";
 
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
-import { collection, addDoc, getDocs, query, onSnapshot } from "firebase/firestore"; 
+import {
+  collection,
+  addDoc,
+  query,
+  onSnapshot,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
 import { db } from "./firebase";
 
 export default function Home() {
+  const [items, setItems] = useState<Record<string, string>[]>([]);
 
-  const [items, setItems] = useState<Record<string, string>[]>([])
+  const [newItem, setNewItem] = useState({ name: "", price: "" });
 
-  const [newItem, setNewItem] = useState({ name: '', price: '' })
+  const [total, setTotal] = useState(0);
 
-  const [total, setTotal] = useState(0)
-
-  const addItem = async (e: FormEvent)=> {
-    e.preventDefault()
-    if(newItem.name !== "" && newItem.price !== '') {
+  const addItem = async (e: FormEvent) => {
+    e.preventDefault();
+    if (newItem.name !== "" && newItem.price !== "") {
       // setItems([...items, newItem])
       await addDoc(collection(db, "items"), {
         name: newItem.name.trim(),
         price: newItem.price,
-      })
-      setNewItem({name: '', price: ''})
+      });
+      setNewItem({ name: "", price: "" });
     }
-  }
+  };
 
+  const deleteItem = async (id: string) => {
+    await deleteDoc(doc(db, "items", id));
+  };
 
-  useEffect(()=> {
-    const itemsQuery = query(collection(db, "items"))
-    const unsubscribe = onSnapshot(itemsQuery, (querySnapShot)=> {
-      let itemArr: Record<string, string>[] = []
-      querySnapShot.forEach((doc)=> {
-        itemArr.push({...doc.data(), id: doc.id })
-      })
-      setItems(itemArr)
-    })
-  }, [])
+  useEffect(() => {
+    const itemsQuery = query(collection(db, "items"));
+    const unsubscribe = onSnapshot(itemsQuery, (querySnapShot) => {
+      let itemArr: Record<string, string>[] = [];
+      querySnapShot.forEach((doc) => {
+        itemArr.push({ ...doc.data(), id: doc.id });
+      });
+      setItems(itemArr);
+
+      const calculateTotal = () => {
+        const totalPrice = itemArr.reduce(
+          (sum, item) => (sum += parseFloat(item.price)),
+          0
+        );
+        setTotal(totalPrice);
+      };
+      calculateTotal();
+      return () => unsubscribe();
+    });
+  }, []);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between sm:p-24">
@@ -78,7 +97,10 @@ export default function Home() {
                   <span className="capitalize">{item.name}</span>
                   <span className="ml-auto">${item.price}</span>
                 </div>
-                <button className="ml-8 p-4 border-l-2 border-slate-900 hover:bg-slate-900 w-16">
+                <button
+                  onClick={() => deleteItem(item.id)}
+                  className="ml-8 p-4 border-l-2 border-slate-900 hover:bg-slate-900 w-16"
+                >
                   X
                 </button>
               </li>
